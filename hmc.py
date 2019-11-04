@@ -103,6 +103,7 @@ class HMC():
             self.mu = np.log(10 * self.epsilon_iter)
 
         for i in range(self.iter + self.adapt_epsilon):
+            print(i)
             self.step()
             results[i, :] = self.current_position
             self.curr_iter += 1
@@ -287,6 +288,7 @@ class HMC_wiggle():
                 self.curr_iter += 1
         if self.version == "vanish_vanilla" or self.version == "distr_L":
             for i in range(self.iter + self.adapt_epsilon):
+                print(i)
                 if self.curr_iter == self.adapt_epsilon - 1:
                     self.L = list()
                 if self.curr_iter < self.adapt_epsilon + self.adapt_L:
@@ -824,7 +826,5 @@ class prHMC():
 
 '''
 TO DO:
-    - NUTS
     - BayesOpt: on hold
-    - models: start tomorrow
 '''

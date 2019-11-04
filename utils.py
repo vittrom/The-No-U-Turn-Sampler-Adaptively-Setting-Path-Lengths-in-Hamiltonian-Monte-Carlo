@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 
 def leapfrog1(position, momentum, grad_U, epsilon):
     momentum -= epsilon * grad_U(position) / 2
@@ -11,9 +12,10 @@ def find_reasonable_epsilon(position_0, grad_U, U):
     """ Heuristic for choosing an initial value of epsilon """
     epsilon = 1.
     momentum_0 = np.random.normal(0., 1., len(position_0))
-
+    pos_0 = deepcopy(position_0)
+    mom_0 = deepcopy(momentum_0)
     # Figure out what direction we should be moving epsilon.
-    position_1, momentum_1 = leapfrog1(position_0, momentum_0, grad_U, epsilon)
+    position_1, momentum_1 = leapfrog1(pos_0, mom_0, grad_U, epsilon)
 
     current_U = U(position_0)
     proposed_U = U(position_1)
@@ -26,7 +28,9 @@ def find_reasonable_epsilon(position_0, grad_U, U):
     # while ( (acceptprob ** a) > (2. ** (-a))):
     while a * logacceptprob > -a * np.log(2):
         epsilon = epsilon * (2. ** a)
-        position_1, momentum_1 = leapfrog1(position_0, momentum_0, grad_U, epsilon)
+        pos_0 = deepcopy(position_0)
+        mom_0 = deepcopy(momentum_0)
+        position_1, momentum_1 = leapfrog1(pos_0, mom_0, grad_U, epsilon)
 
         proposed_K = np.sum(momentum_1 ** 2) / 2
         proposed_U = U(position_1)

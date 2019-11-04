@@ -1,13 +1,15 @@
 from hmc import *
 import matplotlib.pyplot as plt
 from metrics import *
-from mvn import *
+from models import *
+import pymc3 as pm
 
-mvn = mvn(100)
+dim =2
+mvn = mvn(dim=dim, off_diag=0.99)
 U, grad_U = mvn.params()
 
 ### Test cases for all the methods
-start_position = np.repeat(3., 100)  #.array([-1.5, -1.55])
+start_position = np.repeat(3., dim) #np.repeat(3., 100)  #.array([-1.5, -1.55])
 iter = 1000
 samp_random = True
 dual_averaging = True
@@ -15,7 +17,7 @@ dual_averaging = True
 ### HMC ###
 print("Simulating HMC")
 extra_pars_HMC = dict({
-    "L_start": 10,
+    "L_start": 25,
     "L_noise": 0.2,
     "epsilon_noise": 0.2,
     "epsilon_start": 0.25,
@@ -42,7 +44,7 @@ distr_L: specify method
 '''
 print("Simulating wiggle HMC")
 extra_pars_wiggle = dict({
-    "L_start": 10,
+    "L_start": 25,
     "L_noise": 0.2,
     "threshold": 180,
     "epsilon_noise": 0.2,
@@ -128,3 +130,6 @@ print("HMC:" + str([ESS(res_hmc[:, i], 100)/hmc_test.grad_evals for i in range(r
 print("Wiggle:" + str([ESS(res_wiggleHMC[:, i], 100)/hmc_wiggle_test.grad_evals for i in range(res_wiggleHMC.shape[1])]))
 print("eHMC:" + str([ESS(res_eHMC[:, i], 100)/eHMC_test.grad_evals for i in range(res_eHMC.shape[1])]))
 print("prHMC:" + str([ESS(res_prHMC[:, i], 100)/prHMC_test.grad_evals for i in range(res_prHMC.shape[1])]))
+
+print(hmc_wiggle_test.epsilon_bar)
+print(eHMC_test.grad_evals)
