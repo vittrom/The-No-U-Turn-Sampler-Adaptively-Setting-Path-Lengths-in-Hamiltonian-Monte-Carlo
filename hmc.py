@@ -103,7 +103,6 @@ class HMC():
             self.mu = np.log(10 * self.epsilon_iter)
 
         for i in range(self.iter + self.adapt_epsilon):
-            print(i)
             self.step()
             results[i, :] = self.current_position
             self.curr_iter += 1
@@ -288,7 +287,6 @@ class HMC_wiggle():
                 self.curr_iter += 1
         if self.version == "vanish_vanilla" or self.version == "distr_L":
             for i in range(self.iter + self.adapt_epsilon):
-                print(i)
                 if self.curr_iter == self.adapt_epsilon - 1:
                     self.L = list()
                 if self.curr_iter < self.adapt_epsilon + self.adapt_L:
@@ -793,7 +791,7 @@ class prHMC():
         if self.dual_averaging:
             curr_pos = deepcopy(self.current_position)
             self.epsilon_iter = find_reasonable_epsilon(curr_pos, self.grad_U, self.U)
-            self.mu = np.log(10 * self.epsilon_iter)
+            self.mu = np.log(10. * self.epsilon_iter)
             self.epsilon = self.epsilon_iter
 
         if not self.adapt_with_opt_epsilon:

@@ -115,19 +115,19 @@ class stochVolatility():
 
         for i in range(1, self.obs - 1):
             grad[i] = 0.5 - (self.y[i]**2/(2 * np.exp(2*beta) * np.exp(x_s[i]))) - \
-                      np.exp(-gamma) * (x_s[i + 1] - x_s[i] * (np.exp(alpha) - 1)/(np.exp(alpha) + 1)) * (np.exp(alpha) - 1)/(np.exp(alpha) + 1) - \
-                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * (np.exp(alpha) - 1) / (np.exp(alpha) + 1)) * (np.exp(alpha) - 1) / (np.exp(alpha) + 1)
+                      np.exp(-gamma) * (x_s[i + 1] - x_s[i] * (np.exp(alpha) - 1)/(np.exp(alpha) + 1)) * (np.exp(alpha) - 1)/(np.exp(alpha) + 1) + \
+                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * (np.exp(alpha) - 1) / (np.exp(alpha) + 1))
 
         i = self.obs - 1
-        grad[i] = 0.5 - (self.y[i]**2/(2 * np.exp(2*beta) * np.exp(x_s[i]))) - \
-                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * (np.exp(alpha) - 1) / (np.exp(alpha) + 1)) * (np.exp(alpha) - 1) / (np.exp(alpha) + 1)
+        grad[i] = 0.5 - (self.y[i]**2/(2 * np.exp(2*beta) * np.exp(x_s[i]))) + \
+                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * (np.exp(alpha) - 1) / (np.exp(alpha) + 1))
 
         #Extra 3 pars grad
         #grad_alpha
         i += 1
-        grad[i] = -20.5 + 22.5 * (np.exp(alpha)/(1 + np.exp(alpha))) + \
+        grad[i] = -20.5 + 22.5 * (np.exp(alpha)/(1 + np.exp(alpha))) - \
                   (2 * x_s[0]**2 * np.exp(alpha) * (np.exp(alpha) - 1))/(np.exp(1) * gamma * (1 + np.exp(alpha))**3) - \
-                  np.exp(-gamma) * (np.exp(alpha) / (np.exp(alpha) + 1)) * np.sum(x_s[:-1] * (x_s[1:] - x_s[:-1] *((np.exp(alpha) - 1)/(np.exp(alpha)+ 1))))
+                  2 * np.exp(-gamma) * (np.exp(alpha) / (np.exp(alpha) + 1)**2) * np.sum(x_s[:-1] * (x_s[1:] - x_s[:-1] *((np.exp(alpha) - 1)/(np.exp(alpha)+ 1))))
 
         #grad beta
         i += 1
@@ -135,7 +135,7 @@ class stochVolatility():
 
         #grad gamma
         i += 1
-        grad[i] = (self.obs/2 + 5)  - (2 * x_s[0]**2 * np.exp(alpha))/((np.exp(alpha) + 1) ** 2)/(gamma**2) - \
+        grad[i] = (self.obs/2 + 5) - (2 * x_s[0]**2 * np.exp(alpha))/(((np.exp(alpha) + 1) ** 2)*(gamma**2)) - \
                   0.5 * np.sum((x_s[1:] - x_s[:-1] * (np.exp(alpha) -1)/(np.exp(alpha) + 1))**2) * np.exp(-gamma) -\
                   0.25 * np.exp(-gamma)
 
@@ -143,3 +143,5 @@ class stochVolatility():
 
     def params(self):
         return self.U, self.grad_U
+
+#Add sinusoidal sampling to test robustness to varying threshold
