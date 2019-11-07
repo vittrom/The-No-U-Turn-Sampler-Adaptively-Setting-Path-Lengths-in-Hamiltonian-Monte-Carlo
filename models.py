@@ -38,24 +38,31 @@ class logReg():
     def normalize_data(self):
         mean_x = np.mean(self.X, axis=0)
         std_x = np.std(self.X, axis=0)
-        self.X = (self.X - mean_x)/std_x
+        self.X = np.concatenate((np.repeat(1,  self.X.shape[0]).reshape(-1, 1), (self.X - mean_x)/std_x), axis=1)
         self.y = self.y - 1
+        self.y[self.y == 0] = -1
 
     def U(self, theta):
-        X_theta = np.matmul(self.X, theta)
-        exp_X_theta  = np.exp(X_theta)
-        return -np.sum(self.y * X_theta - np.log(1 + exp_X_theta))
+        X_theta = - self.y * np.matmul(self.X, theta)
+        idcs_neg = X_theta < -30
+        idcs_pos = X_theta > 30
+        idcs_rest = np.array([not j[0] and not j[1] for j in zip(idcs_pos, idcs_neg)])
+        X_theta_1 = X_theta
+        X_theta_1[idcs_rest] = -np.log1p(np.exp(X_theta_1[idcs_rest]))
+        X_theta_1[idcs_neg] = -X_theta_1[idcs_neg]
+        X_theta_1[idcs_pos] = -X_theta_1[idcs_pos]
+        return np.sum(X_theta_1)
 
     def grad_U(self, theta):
-        exp_X_theta = np.exp(np.matmul(self.X, theta))
-        for i in range(exp_X_theta.shape[0]):
-            if exp_X_theta[i] < 1e-10:
-                exp_X_theta[i] = 0.0001
-            if exp_X_theta[i] > 999999:
-                exp_X_theta[i] = 999999
-        div = self.y - exp_X_theta/(1 + exp_X_theta)
-        grad = np.sum(np.multiply(div.reshape(-1, 1), self.X), axis=0)
-        return -grad
+        X_theta = -self.y * np.matmul(self.X, theta)
+        idcs_neg = X_theta < -30
+        idcs_pos = X_theta > 30
+        idcs_rest = np.array([not j[0] and not j[1] for j in zip(idcs_pos, idcs_neg)])
+        X_theta[idcs_pos] = 1
+        X_theta[idcs_neg] = 1
+        X_theta[idcs_rest] = np.exp(X_theta[idcs_rest])/(1 + np.exp(X_theta[idcs_rest]))
+        grad = np.sum(X_theta[:, np.newaxis] * (self.y[:, np.newaxis] * self.X), axis=0)
+        return grad
 
     def params(self):
         return self.U, self.grad_U
@@ -91,13 +98,27 @@ class stochVolatility():
         x_s = pars[0:self.obs]
         theta = pars[self.obs:]
         alpha = theta[0]
+        if np.abs(alpha) < 30:
+            phi = (np.exp(alpha) - 1) / (np.exp(alpha) + 1)
+        elif alpha > 30:
+            phi = 1
+        elif alpha < -30:
+            phi = -1
         beta = theta[1]
+        if beta > 15:
+            beta = 15
+        elif beta < -15:
+            beta = -15
         gamma = theta[2]
+        if gamma > 30:
+            gamma = 30
+        elif gamma < -30:
+            gamma = -30
 
         log_p = self.obs * beta + np.sum(x_s/2) + np.sum((self.y ** 2)/(2 * np.exp(2*beta)*np.exp(x_s))) - \
-                20.5*alpha + 22.5 * np.log(np.exp(alpha) + 1) + gamma * (self.obs/2 + 5) + \
-                (2 * x_s[0]**2 * np.exp(alpha))/((np.exp(alpha) + 1)**2 * np.exp(1) * gamma) + \
-                0.5 * np.sum(np.exp(-gamma) *(x_s[1:] - x_s[:-1] *(np.exp(alpha)- 1)/(np.exp(alpha)+ 1))**2)  + \
+                20.5*alpha + 22.5 * np.log(2/(1-phi + 0.0001)) + gamma * (self.obs/2 + 5) + \
+                (1-phi**2)*(2 * x_s[0]**2)/(4 * np.exp(gamma)) + \
+                0.5 * np.sum(np.exp(-gamma) *(x_s[1:] - x_s[:-1] * phi)**2) + \
                 0.25/np.exp(gamma)
 
         return log_p
@@ -106,28 +127,42 @@ class stochVolatility():
         x_s = pars[0:self.obs]
         theta = pars[self.obs:]
         alpha = theta[0]
-        beta  = theta[1]
+        if np.abs(alpha) < 30:
+            phi = (np.exp(alpha) - 1)/(np.exp(alpha) + 1)
+        elif alpha > 30:
+            phi = 1
+        elif alpha < -30:
+            phi = -1
+        beta = theta[1]
+        if beta > 15:
+            beta = 15
+        elif beta < -15:
+            beta = -15
         gamma = theta[2]
+        if gamma > 30:
+            gamma = 30
+        elif gamma < -30:
+            gamma = -30
 
         grad = np.zeros(self.obs + 3)
-        grad[0] = 0.5 - (self.y[0]**2/(2 * np.exp(2*beta) * np.exp(x_s[0]))) + ((4 * x_s[0] * np.exp(alpha))/((np.exp(alpha) + 1)**2 * np.exp(1) * gamma)) - \
-                  np.exp(-gamma) * (x_s[1] - ((np.exp(alpha) - 1)/(np.exp(alpha) + 1))*x_s[0]) * (np.exp(alpha) - 1)/(np.exp(alpha) + 1)
+        grad[0] = 0.5 - (self.y[0]**2/(2 * np.exp(2*beta) * np.exp(x_s[0]))) + (x_s[0] * (1 - phi**2))/(np.exp(gamma)) - \
+                  np.exp(-gamma) * (x_s[1] - phi*x_s[0]) * phi
 
         for i in range(1, self.obs - 1):
             grad[i] = 0.5 - (self.y[i]**2/(2 * np.exp(2*beta) * np.exp(x_s[i]))) - \
-                      np.exp(-gamma) * (x_s[i + 1] - x_s[i] * (np.exp(alpha) - 1)/(np.exp(alpha) + 1)) * (np.exp(alpha) - 1)/(np.exp(alpha) + 1) + \
-                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * (np.exp(alpha) - 1) / (np.exp(alpha) + 1))
+                      np.exp(-gamma) * (x_s[i + 1] - x_s[i] * phi) * phi + \
+                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * phi)
 
         i = self.obs - 1
         grad[i] = 0.5 - (self.y[i]**2/(2 * np.exp(2*beta) * np.exp(x_s[i]))) + \
-                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * (np.exp(alpha) - 1) / (np.exp(alpha) + 1))
+                      np.exp(-gamma) * (x_s[i] - x_s[i - 1] * phi)
 
         #Extra 3 pars grad
         #grad_alpha
         i += 1
-        grad[i] = -20.5 + 22.5 * (np.exp(alpha)/(1 + np.exp(alpha))) - \
-                  (2 * x_s[0]**2 * np.exp(alpha) * (np.exp(alpha) - 1))/(np.exp(1) * gamma * (1 + np.exp(alpha))**3) - \
-                  2 * np.exp(-gamma) * (np.exp(alpha) / (np.exp(alpha) + 1)**2) * np.sum(x_s[:-1] * (x_s[1:] - x_s[:-1] *((np.exp(alpha) - 1)/(np.exp(alpha)+ 1))))
+        grad[i] = -20.5 + 22.5 * (1 + phi)/2 - \
+                  (0.5 * x_s[0]**2 * (phi * (1-phi**2)))/(np.exp(gamma)) - \
+                  0.5 * np.exp(-gamma) * (1-phi**2) / np.sum(x_s[:-1] * (x_s[1:] - x_s[:-1] *phi))
 
         #grad beta
         i += 1
@@ -135,8 +170,8 @@ class stochVolatility():
 
         #grad gamma
         i += 1
-        grad[i] = (self.obs/2 + 5) - (2 * x_s[0]**2 * np.exp(alpha))/(((np.exp(alpha) + 1) ** 2)*(gamma**2)) - \
-                  0.5 * np.sum((x_s[1:] - x_s[:-1] * (np.exp(alpha) -1)/(np.exp(alpha) + 1))**2) * np.exp(-gamma) -\
+        grad[i] = (self.obs/2 + 5) - (0.5 * x_s[0]**2 * (1 - phi**2))/np.exp(gamma) - \
+                  0.5 * np.sum((x_s[1:] - x_s[:-1] * phi)**2) * np.exp(-gamma) -\
                   0.25 * np.exp(-gamma)
 
         return grad
@@ -144,4 +179,27 @@ class stochVolatility():
     def params(self):
         return self.U, self.grad_U
 
-#Add sinusoidal sampling to test robustness to varying threshold
+class banana():
+    def __init__(self, B, dims):
+        self.dims = dims
+        self.B = B
+
+    def U(self, theta):
+        log_p = theta[0]**2/200 + 0.5 * (theta[1] + self.B * theta[0]**2 - 100 * self.B)**2
+        if self.dims > 2:
+            log_p += 0.5 * np.sum(theta[2:]**2)
+
+        return log_p
+
+    def grad_U(self, theta):
+        grad = np.zeros(self.dims)
+
+        grad[0] = theta[0]/100 + (theta[1] + self.B * theta[0]**2 - 100 * self.B) * 2 * self.B * theta[0]
+        grad[1] = theta[1] + self.B * theta[0]**2 - 100 * self.B
+        if self.dims > 2:
+            grad[2:] = theta[2:]
+
+        return grad
+
+    def params(self):
+        return self.U, self.grad_U

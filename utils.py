@@ -35,7 +35,7 @@ def find_reasonable_epsilon(position_0, grad_U, U):
         proposed_K = np.sum(momentum_1 ** 2) / 2
         proposed_U = U(position_1)
         logacceptprob = current_U - proposed_U + current_K - proposed_K
-    # print("find_reasonable_epsilon=", epsilon)
+    print("find_reasonable_epsilon=", epsilon)
 
     return epsilon
 
@@ -48,7 +48,10 @@ def compute_acc_ratio(curr_pos, curr_mom, new_pos, new_mom, U):
     proposed_U = U(new_pos)
     proposed_K = np.sum(new_mom ** 2) / 2
 
-    return np.exp(current_U - proposed_U + current_K - proposed_K)
+    if current_U - proposed_U + current_K - proposed_K > 100:
+        return np.exp(100)
+    else:
+        return np.exp(current_U - proposed_U + current_K - proposed_K)
 
 def stop_criterion(thetaminus, thetaplus, rminus, rplus):
     """ Compute the stop condition in the main loop
