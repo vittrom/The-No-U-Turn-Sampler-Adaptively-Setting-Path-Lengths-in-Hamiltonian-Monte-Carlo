@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import pandas as pd
+from statsmodels.graphics.tsaplots import plot_acf
 
 def plot_method(name):
     mult = 1000
@@ -59,3 +60,10 @@ def compute_mean_esjds(esjds):
     pd_df = pd.DataFrame(esjds, columns=["esjd", "deltas"])
     pd_df = np.array(pd_df.groupby("deltas", as_index=False).mean())
     return pd_df
+
+def plot_autocorr(data, col, save_path, lag=100):
+    f = plot_acf(data[:, col], lags=lag)
+    plt.xlabel("Lag")
+    plt.ylabel("Autocorrelation")
+    plt.savefig(save_path)
+    plt.close()

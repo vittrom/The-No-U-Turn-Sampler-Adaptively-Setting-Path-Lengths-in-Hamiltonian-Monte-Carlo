@@ -832,7 +832,7 @@ class prHMC():
             self.curr_iter += 1
         t1 = process_time()
         self.elapsed_time = t1 - t0
-        return results
+        return np.array(results)
 
 """
 Original code for No-U-Turn Sampler (NUTS) and

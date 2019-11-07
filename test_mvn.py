@@ -95,5 +95,5 @@ res_hmc = res_wiggleHMC
 print(res_hmc.shape)
 
 plt.figure(1)
-plt.scatter(res_hmc[:, 0], res_hmc[:,1])
+plt.scatter(res_hmc[:, 0], res_hmc[:, 1])
 plt.show()

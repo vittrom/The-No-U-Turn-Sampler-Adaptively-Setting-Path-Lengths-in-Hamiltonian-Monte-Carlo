@@ -1,5 +1,5 @@
-import numpy as np
 from copy import deepcopy
+import numpy as np
 
 def leapfrog1(position, momentum, grad_U, epsilon):
     momentum -= epsilon * grad_U(position) / 2
@@ -71,3 +71,28 @@ def stop_criterion(thetaminus, thetaplus, rminus, rplus):
     """
     dtheta = thetaplus - thetaminus
     return (np.dot(dtheta, rminus.T) >= 0) & (np.dot(dtheta, rplus.T) >= 0)
+
+def reset_experiment_matrix(replications, dim):
+    esjd_l_hmc = np.zeros((replications, 2))
+    ess_l_hmc = np.zeros((replications, dim + 1))
+    ess_s_hmc = np.zeros((replications, dim + 1))
+
+    esjd_l_wiggle_hmc = np.zeros((replications, 2))
+    ess_l_wiggle_hmc = np.zeros((replications, dim + 1))
+    ess_s_wiggle_hmc = np.zeros((replications, dim + 1))
+
+    esjd_l_ehmc = np.zeros((replications, 2))
+    ess_l_ehmc = np.zeros((replications, dim + 1))
+    ess_s_ehmc = np.zeros((replications, dim + 1))
+
+    esjd_l_prhmc = np.zeros((replications, 2))
+    ess_l_prhmc = np.zeros((replications, dim + 1))
+    ess_s_prhmc = np.zeros((replications, dim + 1))
+
+    esjd_l_nuts = np.zeros((replications, 2))
+    ess_l_nuts = np.zeros((replications, dim + 1))
+    ess_s_nuts = np.zeros((replications, dim + 1))
+
+    return esjd_l_hmc, ess_l_hmc, ess_s_hmc, esjd_l_wiggle_hmc, ess_l_wiggle_hmc,\
+           ess_s_wiggle_hmc, esjd_l_ehmc, ess_l_ehmc, ess_s_ehmc, esjd_l_prhmc,\
+           ess_l_prhmc, ess_s_prhmc, esjd_l_nuts, ess_l_nuts ,ess_s_nuts
