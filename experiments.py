@@ -7,11 +7,11 @@ dim = 20
 mvn = mvn(dim=dim, off_diag=0.99)
 U, grad_U = mvn.params()
 
-### Test cases for all the methods
+## Test cases for all the methods
 start_position = np.repeat(3., dim)
 iter = 1000
 
-### Extra pars definition
+# ### Extra pars definition
 extra_pars = dict({
     'L_start': 25,
     'L_noise': 0.2,
@@ -32,50 +32,48 @@ extra_pars = dict({
     'samp_random': True,
     'dual_averaging': True
 })
-
+#
 delta = np.array((0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95))
 replications = 10
-lag = 100
 
-run_experiment(U, grad_U, start_position, iter, "mvn", delta, replications, dim, extra_pars, lag)
+run_experiment(U, grad_U, start_position, iter, "mvn", delta, replications, dim, extra_pars)
 
 print("Doing logreg experiment")
 log_reg = logReg()
 U, grad_U = log_reg.params()
 
 dim = 25
-start_position = np.repeat(0, dim)
-iter = 100
-replications = 5
-lag = 40
-extra_pars["adapt_epsilon"] = 20
-extra_pars["adapt_L"] = 20
+start_position = np.repeat(0., dim)
+iter = 500
+replications = 3
+extra_pars["adapt_epsilon"] = 10
+extra_pars["adapt_L"] = 100
 
-run_experiment(U, grad_U, start_position, iter, "log_reg", delta, replications, dim, extra_pars, lag)
+run_experiment(U, grad_U, start_position, iter, "log_reg", delta, replications, dim, extra_pars)
+
 
 print("Doing stochastic volatility experiment")
-stoch_vol = stochVolatility(obs=200)
+obs = 20
+stoch_vol = stochVolatility(obs=obs)
 U, grad_U = stoch_vol.params()
 
-dim = 200 + 3
-start_position = np.random.normal(size=dim)
-iter = 500
+dim = obs + 3
+start_position = np.random.normal(scale=2, size=dim)
+iter = 100
 replications = 5
-lag = 40
-run_experiment(U, grad_U, start_position, iter, "sv", delta, replications, dim, extra_pars, lag)
+run_experiment(U, grad_U, start_position, iter, "sv", delta, replications, dim, extra_pars)
 
 print("Doing banana experiment")
 B = 0.1
 dims = np.array([2, 10, 20])
 iter = 1000
 replications = 10
-lag = 100
 extra_pars["adapt_epsilon"] = 100
 extra_pars["adapt_L"] = 100
 
 for d in dims:
-    banana = banana(B=B, dims=d)
-    U, grad_U = banana.params()
+    banana_l = banana(B=B, dims=d)
+    U, grad_U = banana_l.params()
 
-    start_position = np.repeat(0, d)
-    run_experiment(U, grad_U, start_position, iter, "banana", delta, replications, d, extra_pars, lag)
+    start_position = np.repeat(1., d)
+    run_experiment(U, grad_U, start_position, iter, "banana", delta, replications, d, extra_pars)

@@ -1,6 +1,7 @@
 from methods import *
 import matplotlib.pyplot as plt
 from models import *
+import os
 
 extra_pars_eHMC = dict({
             "L_start": 10,
@@ -45,7 +46,7 @@ extra_pars_HMC = dict({
             "t0": 10,
             "kappa": 0.75,
             "delta": 0.65,
-            "adapt_epsilon": 10
+            "adapt_epsilon": 100
         })
 extra_pars_wiggle = dict({
             "L_start": 25,
@@ -64,7 +65,7 @@ extra_pars_wiggle = dict({
             "t0": 10,
             "kappa": 0.75,
             "delta": 0.65,
-            "adapt_epsilon": 10
+            "adapt_epsilon": 100
         })
 extra_pars_NUTS = dict({
             "epsilon_bar": 1,
@@ -78,22 +79,31 @@ extra_pars_NUTS = dict({
         })
 
 dim = 2
-off_diag = 0.99
+off_diag = 0.95
 mvn = mvn(dim=dim, off_diag=off_diag)
 U, grad_U = mvn.params()
 
-start_position = np.repeat(1., dim)
+start_position = np.array([-1.5, -1.55]) #np.repeat(1., dim)
 iter = 1000
 samp_random = True
 dual_averaging = True
 
-nuts_test = NUTS(U, grad_U, start_position, extra_pars_NUTS, iter)
+nuts_test = HMC_wiggle(U, grad_U, start_position, extra_pars_wiggle, iter)#, samp_random, dual_averaging)
 res_wiggleHMC = nuts_test.simulate()
 start = nuts_test.adapt_epsilon
 res_hmc = res_wiggleHMC
 
 print(res_hmc.shape)
+print(np.mean(nuts_test.L))
+# plt.hist(nuts_test.L)
+# plt.xlabel("Leapfrog steps")
+# plt.ylabel("Count")
+# plt.title("Histogram of leapfrog steps from NWHMC")
+# plt.savefig(os.path.join("Plots","mvn_example.pdf"))
 
 plt.figure(1)
-plt.scatter(res_hmc[:, 0], res_hmc[:, 1])
-plt.show()
+plt.scatter(res_hmc[:, 0], res_hmc[:, 1], s=15)
+plt.xlabel("Dimension 1")
+plt.ylabel("Dimension 2")
+plt.title("NWHMC")
+plt.savefig(os.path.join("Plots", "nwhmc_samps.pdf"))

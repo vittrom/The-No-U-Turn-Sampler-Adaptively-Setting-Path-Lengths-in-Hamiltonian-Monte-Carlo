@@ -4,7 +4,7 @@ from metrics import *
 from utils import *
 import os
 
-def run_experiment(U, grad_U, start_position, iter, name, delta, replications, dim, extra_pars, lag=100):
+def run_experiment(U, grad_U, start_position, iter, name, delta, replications, dim, extra_pars):
     L_start, L_noise, epsilon_noise, epsilon_start, epsilon_bar, gamma, t0, kappa, adapt_epsilon, \
     threshold, quantile_ub, quantile_lb, adapt_L, adapt_opt_epsilon, \
     refreshment_prob, delta_max, dual_averaging, samp_random = set_extra_pars(extra_pars)
@@ -20,7 +20,7 @@ def run_experiment(U, grad_U, start_position, iter, name, delta, replications, d
         curr_d = str(d).replace(".", "_")
         for i in range(replications):
             print(i)
-            ### HMC ###
+            # ### HMC ###
             print("Simulating HMC")
             extra_pars_HMC = dict({
                 "L_start": L_start,
@@ -34,30 +34,17 @@ def run_experiment(U, grad_U, start_position, iter, name, delta, replications, d
                 "delta": d,
                 "adapt_epsilon": adapt_epsilon
             })
+            if name == "banana":
+                dual_averaging = False
             hmc_test = HMC(U, grad_U, start_position, extra_pars_HMC, iter, samp_random, dual_averaging)
             res_hmc = hmc_test.simulate()
             res_hmc = res_hmc[start:, :]
 
             # Compute metrics
             esjd_l_hmc[i, :] = np.array((ESJD(res_hmc) / hmc_test.grad_evals, d))
-            ess_s_hmc[i, :] = [ESS(res_hmc[:, i], lag) / hmc_test.elapsed_time for i in range(res_hmc.shape[1])] + [d]
-            ess_l_hmc[i, :] = [ESS(res_hmc[:, i], lag) / hmc_test.grad_evals for i in range(res_hmc.shape[1])] + [d]
+            ess_s_hmc[i, :] = [ESS(res_hmc[:, i]) / hmc_test.elapsed_time for i in range(res_hmc.shape[1])] + [d]
+            ess_l_hmc[i, :] = [ESS(res_hmc[:, i]) / hmc_test.grad_evals for i in range(res_hmc.shape[1])] + [d]
 
-            # Plot autocorrelation for one of the dimensions
-            col = np.min((5, dim - 1))
-            plot_autocorr(res_hmc, col,
-                          os.path.join("Plots", "HMC", name, "autocorr", "autocorr_delta" + curr_d + "_dim_" + str(dim) + "_rep_" + str(i) + ".png"),
-                          lag=lag)
-
-            ### HMC wiggle ###
-            '''
-            vanilla: no extra parameters to specify
-            vanish_vanilla: specify function
-            distr_L: specify method
-                        - quantile: specify LB, UB
-                        - random: nothing to specify
-                        - random_unif: nothing to specify
-            '''
             print("Simulating wiggle HMC")
             extra_pars_wiggle = dict({
                 "L_start": L_start,
@@ -84,17 +71,16 @@ def run_experiment(U, grad_U, start_position, iter, name, delta, replications, d
             res_wiggleHMC = res_wiggleHMC[start:, :]
             # Compute metrics
             esjd_l_wiggle_hmc[i, :] = np.array((ESJD(res_wiggleHMC) / hmc_wiggle_test.grad_evals, d))
-            ess_s_wiggle_hmc[i, :] = [ESS(res_wiggleHMC[:, i], 100) / hmc_wiggle_test.elapsed_time for i in
+            ess_s_wiggle_hmc[i, :] = [ESS(res_wiggleHMC[:, i]) / hmc_wiggle_test.elapsed_time for i in
                                       range(res_wiggleHMC.shape[1])] + [d]
-            ess_l_wiggle_hmc[i, :] = [ESS(res_wiggleHMC[:, i], 100) / hmc_wiggle_test.grad_evals for i in
+            ess_l_wiggle_hmc[i, :] = [ESS(res_wiggleHMC[:, i]) / hmc_wiggle_test.grad_evals for i in
                                       range(res_wiggleHMC.shape[1])] + [d]
 
             # Plot autocorrelation for one of the dimensions
-            plot_autocorr(res_wiggleHMC, col,
-                          os.path.join("Plots","wiggle_HMC",name,  "autocorr", "autocorr_delta" + curr_d + "_dim_" + str(dim) + "_rep_" + str(i) + ".png"),
-                          lag=lag)
+            # plot_autocorr(res_wiggleHMC, col,
+            #               os.path.join("Plots","wiggle_HMC",name,  "autocorr", "autocorr_delta" + curr_d + "_dim_" + str(dim) + "_rep_" + str(i) + ".png"))
 
-            ### eHMC ###
+            # ### eHMC ###
             print("Simulating eHMC")
             extra_pars_eHMC = dict({
                 "L_start": L_start,
@@ -116,16 +102,15 @@ def run_experiment(U, grad_U, start_position, iter, name, delta, replications, d
             res_eHMC = eHMC_test.simulate()
             res_eHMC = res_eHMC[start:, :]
 
-            # Compute metrics
+            # # Compute metrics
             esjd_l_ehmc[i, :] = np.array((ESJD(res_eHMC) / eHMC_test.grad_evals, d))
-            ess_s_ehmc[i, :] = [ESS(res_eHMC[:, i], 100) / eHMC_test.elapsed_time for i in range(res_eHMC.shape[1])] + [
+            ess_s_ehmc[i, :] = [ESS(res_eHMC[:, i]) / eHMC_test.elapsed_time for i in range(res_eHMC.shape[1])] + [
                 d]
-            ess_l_ehmc[i, :] = [ESS(res_eHMC[:, i], 100) / eHMC_test.grad_evals for i in range(res_eHMC.shape[1])] + [d]
+            ess_l_ehmc[i, :] = [ESS(res_eHMC[:, i]) / eHMC_test.grad_evals for i in range(res_eHMC.shape[1])] + [d]
 
             # Plot autocorrelation for one of the dimensions
-            plot_autocorr(res_eHMC, col,
-                          os.path.join("Plots", "eHMC", name, "autocorr", "autocorr_delta" + curr_d + "_dim_" + str(dim) + "_rep_" + str(i) + ".png"),
-                          lag=lag)
+            # plot_autocorr(res_eHMC, col,
+            #               os.path.join("Plots", "eHMC", name, "autocorr", "autocorr_delta" + curr_d + "_dim_" + str(dim) + "_rep_" + str(i) + ".png"))
 
             ### prHMC ###
             print("Simulating prHMC")
@@ -152,15 +137,14 @@ def run_experiment(U, grad_U, start_position, iter, name, delta, replications, d
 
             # Compute metrics
             esjd_l_prhmc[i, :] = np.array((ESJD(res_prHMC) / prHMC_test.grad_evals, d))
-            ess_s_prhmc[i, :] = [ESS(res_prHMC[:, i], 100) / prHMC_test.elapsed_time for i in
+            ess_s_prhmc[i, :] = [ESS(res_prHMC[:, i]) / prHMC_test.elapsed_time for i in
                                  range(res_prHMC.shape[1])] + [d]
-            ess_l_prhmc[i, :] = [ESS(res_prHMC[:, i], 100) / prHMC_test.grad_evals for i in
+            ess_l_prhmc[i, :] = [ESS(res_prHMC[:, i]) / prHMC_test.grad_evals for i in
                                  range(res_prHMC.shape[1])] + [d]
 
             # Plot autocorrelation for one of the dimensions
-            plot_autocorr(res_prHMC, col,
-                          os.path.join("Plots", "prHMC", name, "autocorr", "autocorr_delta_" + curr_d + "_dim_" + str(dim) + "_rep_" + str(i) + ".png"),
-                          lag=lag)
+            # plot_autocorr(res_prHMC, col,
+            #               os.path.join("Plots", "prHMC", name, "autocorr", "autocorr_delta_" + curr_d + "_dim_" + str(dim) + "_rep_" + str(i) + ".png"))
 
             # NUTS
             print("Simulating NUTS")
@@ -179,21 +163,34 @@ def run_experiment(U, grad_U, start_position, iter, name, delta, replications, d
 
             # Compute metrics
             esjd_l_nuts[i, :] = np.array((ESJD(res_nuts) / nuts_test.grad_evals, d))
-            ess_s_nuts[i, :] = [ESS(res_nuts[:, i], 100) / nuts_test.elapsed_time for i in range(res_nuts.shape[1])] + [
+            ess_s_nuts[i, :] = [ESS(res_nuts[:, i]) / nuts_test.elapsed_time for i in range(res_nuts.shape[1])] + [
                 d]
-            ess_l_nuts[i, :] = [ESS(res_nuts[:, i], 100) / nuts_test.grad_evals for i in range(res_nuts.shape[1])] + [d]
+            ess_l_nuts[i, :] = [ESS(res_nuts[:, i]) / nuts_test.grad_evals for i in range(res_nuts.shape[1])] + [d]
 
             # Plot autocorrelation for one of the dimensions
-            plot_autocorr(res_nuts, col,
-                          os.path.join("Plots", "NUTS", name, "autocorr", "autocorr_" + curr_d + "_" + str(i) + ".png"),
-                          lag=lag)
+            # plot_autocorr(res_nuts, col,
+            #               os.path.join("Plots", "NUTS", name, "autocorr", "autocorr_" + curr_d + "_" + str(i) + ".png"))
 
-        np.savez(os.path.join("Results", "HMC", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_hmc, ess_s_hmc, ess_l_hmc)
-        np.savez(os.path.join("Results", "wiggle_HMC", name,  "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_wiggle_hmc,
-                 ess_s_wiggle_hmc, ess_l_wiggle_hmc)
-        np.savez(os.path.join("Results", "eHMC", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_ehmc, ess_s_ehmc, ess_l_ehmc)
-        np.savez(os.path.join("Results", "prHMC", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_prhmc, ess_s_prhmc, ess_l_prhmc)
-        np.savez(os.path.join("Results", "NUTS", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_nuts, ess_s_nuts, ess_l_nuts)
+        if name == "banana":
+            np.savez(os.path.join("Results", "HMC", name, "dim_" + str(dim), "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"),
+                     esjd_l_hmc, ess_s_hmc, ess_l_hmc)
+            np.savez(
+                os.path.join("Results", "wiggle_HMC", name, "dim_" + str(dim), "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"),
+                esjd_l_wiggle_hmc,
+                ess_s_wiggle_hmc, ess_l_wiggle_hmc)
+            np.savez(os.path.join("Results", "eHMC", name,"dim_" + str(dim), "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"),
+                     esjd_l_ehmc, ess_s_ehmc, ess_l_ehmc)
+            np.savez(os.path.join("Results", "prHMC", name, "dim_" + str(dim),"results_delta" + curr_d + "_dim_" + str(dim) + ".npz"),
+                     esjd_l_prhmc, ess_s_prhmc, ess_l_prhmc)
+            np.savez(os.path.join("Results", "NUTS", name, "dim_" + str(dim), "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"),
+                     esjd_l_nuts, ess_s_nuts, ess_l_nuts)
+        else:
+            np.savez(os.path.join("Results", "HMC", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_hmc, ess_s_hmc, ess_l_hmc)
+            np.savez(os.path.join("Results", "wiggle_HMC", name,  "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_wiggle_hmc,
+                     ess_s_wiggle_hmc, ess_l_wiggle_hmc)
+            np.savez(os.path.join("Results", "eHMC", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_ehmc, ess_s_ehmc, ess_l_ehmc)
+            np.savez(os.path.join("Results", "prHMC", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_prhmc, ess_s_prhmc, ess_l_prhmc)
+            np.savez(os.path.join("Results", "NUTS", name, "results_delta" + curr_d + "_dim_" + str(dim) + ".npz"), esjd_l_nuts, ess_s_nuts, ess_l_nuts)
 
 def set_extra_pars(extra_pars):
     L_start = extra_pars["L_start"]

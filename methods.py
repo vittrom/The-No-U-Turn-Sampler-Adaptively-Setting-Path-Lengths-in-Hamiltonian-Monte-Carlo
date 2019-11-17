@@ -22,10 +22,10 @@ class HMC():
         self.alpha = None
         self.curr_iter = 1
         self.dual_averaging = dual_averaging
-
+        self.adapt_epsilon = 0
         if self.dual_averaging:
             self.h_bar = 0
-            self.mu = self.epsilon_bar = self.gamma = self.t0 = self.kappa = self.delta = self.adapt_epsilon = None
+            self.mu = self.epsilon_bar = self.gamma = self.t0 = self.kappa = self.delta = None
             self.set_dual_averaging_pars(extra_pars)
 
     def set_dual_averaging_pars(self, extra_pars):
@@ -142,10 +142,10 @@ class HMC_wiggle():
         self.alpha = None
         self.curr_iter = 1
         self.dual_averaging = dual_averaging
-
+        self.adapt_epsilon = 0
         if self.dual_averaging:
             self.h_bar = 0
-            self.mu = self.epsilon_bar = self.gamma = self.t0 = self.kappa = self.delta = self.adapt_epsilon = None
+            self.mu = self.epsilon_bar = self.gamma = self.t0 = self.kappa = self.delta = None
             self.set_dual_averaging_pars(extra_pars)
 
     def set_dual_averaging_pars(self, extra_pars):
@@ -215,7 +215,7 @@ class HMC_wiggle():
         L = 0
         while self.angles_sum <= self.threshold:
             if L > 100:
-                self.threshold *= 0.98 #.min((180, self.angles_sum * 1.05))
+                self.threshold *= 0.98
                 break
             # print(stop_criterion(self.current_position, position, current_momentum, momentum))
             # if L > 0 and not stop_criterion(self.current_position, position, current_momentum, momentum):

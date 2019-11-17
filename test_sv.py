@@ -78,16 +78,16 @@ extra_pars_NUTS = dict({
             "start_epsilon": 0.25
         })
 
-volatility = stochVolatility()
+volatility = stochVolatility(obs=100)
 U, grad_U = volatility.params()
 
-dims = 1003
+dims = 103
 start_position = np.random.normal(size=dims)
 iter = 10
 samp_random = True
 dual_averaging = True
 
-hmc_wiggle_test = HMC_wiggle(U, grad_U, start_position, extra_pars_wiggle, iter, samp_random,dual_averaging)
+hmc_wiggle_test = HMC(U, grad_U, start_position, extra_pars_wiggle, iter, samp_random,dual_averaging)
 res_wiggleHMC = hmc_wiggle_test.simulate()
 start = hmc_wiggle_test.adapt_epsilon
 print(res_wiggleHMC.shape)
@@ -105,5 +105,5 @@ start = nuts_test.adapt_epsilon
 res_hmc = res_wiggleHMC
 print(res_hmc.shape)
 plt.figure(2)
-plt.scatter(res_hmc[:, 0], res_hmc[:,1])
+plt.scatter(res_hmc[:, 0], res_hmc[:, 1])
 plt.show()

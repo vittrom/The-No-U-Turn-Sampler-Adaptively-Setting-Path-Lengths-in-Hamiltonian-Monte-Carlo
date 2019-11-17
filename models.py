@@ -83,7 +83,7 @@ class stochVolatility():
         for i in range(T):
             if count == 0:
                 x = np.random.normal(loc=0, scale=(self.sigma_0**2)/(1-self.phi_0**2), size=1)
-                eps = np.random.normal(size = 1)
+                eps = np.random.normal(size=1)
                 y[count] = eps * self.kappa_0 * np.exp(0.5 * x)
             else:
                 eta = np.random.normal(loc=0, scale=self.sigma_0**2)
@@ -127,12 +127,12 @@ class stochVolatility():
         x_s = pars[0:self.obs]
         theta = pars[self.obs:]
         alpha = theta[0]
-        if np.abs(alpha) < 30:
-            phi = (np.exp(alpha) - 1)/(np.exp(alpha) + 1)
-        elif alpha > 30:
+        if alpha > 30:
             phi = 1
         elif alpha < -30:
             phi = -1
+        else:
+            phi = (np.exp(alpha) - 1) / (np.exp(alpha) + 1)
         beta = theta[1]
         if beta > 15:
             beta = 15

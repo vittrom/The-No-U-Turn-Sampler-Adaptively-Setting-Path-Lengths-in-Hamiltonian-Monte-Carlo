@@ -1,15 +1,8 @@
 import numpy as np
-
-def ESS(data, lag=None):
+from statsmodels.tsa.stattools import acf
+def ESS(data):
     M = len(data)
-    if lag is None:
-        lag = M - 1
-
-    corr = 0
-    for i in range(1, lag):
-        corr += np.corrcoef(data[:-i], data[i:])[0, 1]
-
-    return M/(1 + 2 * corr)
+    return M/(2*acf(data, nlags=40).sum() - 1)
 
 def ESJD(data):
     N = data.shape[0]
